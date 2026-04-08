@@ -2,6 +2,7 @@
 
 use Modern::Perl;
 
+use Config::Tiny;
 use Fcntl qw(:flock);
 use Getopt::Long;
 use HTTP::Tiny;
@@ -12,19 +13,33 @@ use POSIX qw(setsid strftime);
 
 my $VERSION = '1.0.0';
 
-my $slack_webhook  = $ENV{SLACK_WEBHOOK_URL}    // '';
-my $clusters_env   = $ENV{EHM_MONITOR_CLUSTERS} // '';
-my $servers_env    = $ENV{EHM_MONITOR_SERVERS}  // '';
-my $check_interval = $ENV{EHM_MONITOR_INTERVAL} // 60;
-my $heap_warn      = $ENV{EHM_MONITOR_WARN}     // 80;
-my $heap_crit      = $ENV{EHM_MONITOR_CRIT}     // 90;
-my $cooldown       = $ENV{EHM_MONITOR_COOLDOWN} // 1800;
-my $http_timeout   = $ENV{EHM_MONITOR_TIMEOUT}  // 10;
-my $log_file   = $ENV{EHM_MONITOR_LOG} // '/var/log/elastic-heap-monitor.log';
-my $pid_file   = $ENV{EHM_MONITOR_PID} // '/var/run/elastic-heap-monitor.pid';
-my $daemonize  = $ENV{EHM_MONITOR_DAEMONIZE} // 0;
-my $once       = $ENV{EHM_MONITOR_ONCE}      // 0;
-my $verbose    = $ENV{EHM_MONITOR_VERBOSE}   // 0;
+my $config_file = $ENV{EHM_MONITOR_CONFIG} // '/etc/elastic-heap-monitor.conf';
+
+my $file_config = {};
+if ( -f $config_file ) {
+    my $conf = Config::Tiny->read($config_file);
+    if ($conf) {
+        $file_config = $conf->{_} // {};
+    }
+    else {
+        warn "WARNING: Cannot read config file $config_file: "
+          . Config::Tiny->errstr . "\n";
+    }
+}
+
+my $slack_webhook  = $ENV{SLACK_WEBHOOK_URL}    // $file_config->{webhook}   // '';
+my $clusters_env   = $ENV{EHM_MONITOR_CLUSTERS} // $file_config->{clusters}  // '';
+my $servers_env    = $ENV{EHM_MONITOR_SERVERS}   // $file_config->{servers}   // '';
+my $check_interval = $ENV{EHM_MONITOR_INTERVAL} // $file_config->{interval}  // 60;
+my $heap_warn      = $ENV{EHM_MONITOR_WARN}     // $file_config->{warn}      // 80;
+my $heap_crit      = $ENV{EHM_MONITOR_CRIT}     // $file_config->{crit}      // 90;
+my $cooldown       = $ENV{EHM_MONITOR_COOLDOWN} // $file_config->{cooldown}  // 1800;
+my $http_timeout   = $ENV{EHM_MONITOR_TIMEOUT}  // $file_config->{timeout}   // 10;
+my $log_file   = $ENV{EHM_MONITOR_LOG}       // $file_config->{log}       // '/var/log/elastic-heap-monitor.log';
+my $pid_file   = $ENV{EHM_MONITOR_PID}       // $file_config->{pid}       // '/var/run/elastic-heap-monitor.pid';
+my $daemonize  = $ENV{EHM_MONITOR_DAEMONIZE} // $file_config->{daemonize} // 0;
+my $once       = $ENV{EHM_MONITOR_ONCE}      // $file_config->{once}      // 0;
+my $verbose    = $ENV{EHM_MONITOR_VERBOSE}   // $file_config->{verbose}   // 0;
 my $test_alert = 0;
 
 GetOptions(
@@ -57,7 +72,7 @@ elsif ($servers_env) {
 else {
     my $hosts_servers = servers_from_hosts();
     if ($hosts_servers) {
-        log_msg("No --clusters or --servers set, discovered servers from /etc/hosts: $hosts_servers");
+        log_msg("No --clusters or --servers set, discovered servers from /etc/hosts: $hosts_servers") if $verbose;
         $CLUSTERS = discover_clusters($hosts_servers);
     }
 }
@@ -590,11 +605,18 @@ alerts to Slack when configurable thresholds are exceeded. Supports recovery
 notifications when values return to normal, and a cooldown period to prevent
 alert floods.
 
-Each setting uses: CLI flag > environment variable > hardcoded default.
+Each setting uses the following precedence (highest to lowest):
+
+    CLI flag > environment variable > config file > hardcoded default
 
 =head1 OPTIONS
 
 =over 4
+
+=item B<--config> FILE
+
+Path to configuration file. Default: F</etc/elastic-heap-monitor.conf>.
+[EHM_MONITOR_CONFIG]
 
 =item B<--webhook> URL
 
@@ -615,11 +637,11 @@ Seconds between check cycles. Default: 60. [EHM_MONITOR_INTERVAL]
 
 =item B<--warn> PCT
 
-Heap warning threshold percent. Default: 75. [EHM_MONITOR_WARN]
+Heap warning threshold percent. Default: 80. [EHM_MONITOR_WARN]
 
 =item B<--crit> PCT
 
-Heap critical threshold percent. Default: 85. [EHM_MONITOR_CRIT]
+Heap critical threshold percent. Default: 90. [EHM_MONITOR_CRIT]
 
 =item B<--cooldown> SECS
 
@@ -663,6 +685,34 @@ Print this help text.
 Print version.
 
 =back
+
+=head1 CONFIG FILE
+
+The config file uses a simple C<key = value> format, one setting per line.
+Lines starting with C<#> are comments. Keys correspond to the long CLI flag
+names (without the leading C<-->).
+
+Example F</etc/elastic-heap-monitor.conf>:
+
+    # Slack
+    webhook = https://hooks.slack.com/services/XXX/YYY/ZZZ
+
+    # Clusters
+    clusters = c1=http://es1:9200;c2=http://es2:9200
+
+    # Thresholds
+    interval  = 30
+    warn      = 80
+    crit      = 90
+    cooldown  = 1800
+    timeout   = 10
+
+    # Paths
+    log = /var/log/elastic-heap-monitor.log
+    pid = /var/run/elastic-heap-monitor.pid
+
+    # Flags
+    verbose   = 1
 
 =head1 CLUSTER CONFIGURATION
 
