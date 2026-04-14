@@ -17,7 +17,6 @@ jobs:
         run: |
           docker run --rm \
               -v "$GITHUB_WORKSPACE":/build \
-              -w /build/src \
               debian:stretch-slim \
               bash -euxc '
                 cat > /etc/apt/sources.list <<EOF
@@ -41,6 +40,9 @@ jobs:
                   libjson-perl \
                   libio-socket-ssl-perl \
                   libmodern-perl-perl
+                cd /build/src
+                pwd
+                ls -la
                 dpkg-buildpackage -us -uc -b
               '
 
