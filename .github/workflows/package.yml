@@ -15,8 +15,10 @@ jobs:
 
       - name: Build package in debian:stretch-slim
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
           docker run --rm \
               -v "$GITHUB_WORKSPACE":/build \
+              -e VERSION="$VERSION" \
               debian:stretch-slim \
               bash -euxc '
                 cat > /etc/apt/sources.list <<EOF
@@ -41,8 +43,10 @@ jobs:
                   libio-socket-ssl-perl \
                   libmodern-perl-perl
                 cd /build/src
-                pwd
-                ls -la
+                sed -i "1s|([^)]*)|($VERSION)|" debian/changelog
+                sed -i "s|^my \$VERSION = .*|my \$VERSION = '"'"'$VERSION'"'"';|" elastic-heap-monitor.pl
+                head -1 debian/changelog
+                grep "^my \$VERSION" elastic-heap-monitor.pl
                 dpkg-buildpackage -us -uc -b
               '
 
