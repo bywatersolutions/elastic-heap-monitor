@@ -10,6 +10,7 @@ use IO::Handle;
 use JSON;
 use Pod::Usage;
 use POSIX qw(setsid strftime);
+use Sys::Hostname;
 
 my $VERSION = '1.0.0';
 
@@ -123,6 +124,19 @@ log_msg("Monitoring "
 log_msg(
 "Heap thresholds: warn=${heap_warn}%  crit=${heap_crit}%  cooldown=${cooldown}s"
 );
+
+if ($slack_webhook) {
+    my $host          = hostname();
+    my $cluster_count = scalar keys %$CLUSTERS;
+    my @cluster_names = sort keys %$CLUSTERS;
+    send_slack_alert(
+        color => 'good',
+        title => ":rocket: elastic-heap-monitor started on $host",
+        text  => "Monitoring $cluster_count cluster(s) every ${check_interval}s:\n"
+            . join( "\n", map { "  - $_" } @cluster_names ),
+        cluster => 'startup',
+    );
+}
 
 while ($running) {
     for my $cluster_name ( sort keys %$CLUSTERS ) {
