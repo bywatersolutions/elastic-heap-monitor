@@ -13,7 +13,7 @@ use POSIX qw(setsid strftime);
 
 my $VERSION = '1.0.0';
 
-my $config_file = $ENV{EHM_MONITOR_CONFIG} // '/etc/elastic-heap-monitor.conf';
+my $config_file = $ENV{EHM_MONITOR_CONFIG} // '/etc/elastic-heap-monitor/elastic-heap-monitor.conf';
 
 my $file_config = {};
 if ( -f $config_file ) {
@@ -615,7 +615,7 @@ Each setting uses the following precedence (highest to lowest):
 
 =item B<--config> FILE
 
-Path to configuration file. Default: F</etc/elastic-heap-monitor.conf>.
+Path to configuration file. Default: F</etc/elastic-heap-monitor/elastic-heap-monitor.conf>.
 [EHM_MONITOR_CONFIG]
 
 =item B<--webhook> URL
@@ -692,7 +692,7 @@ The config file uses a simple C<key = value> format, one setting per line.
 Lines starting with C<#> are comments. Keys correspond to the long CLI flag
 names (without the leading C<-->).
 
-Example F</etc/elastic-heap-monitor.conf>:
+Example F</etc/elastic-heap-monitor/elastic-heap-monitor.conf>:
 
     # Slack
     webhook = https://hooks.slack.com/services/XXX/YYY/ZZZ
