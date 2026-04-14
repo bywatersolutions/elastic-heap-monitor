@@ -1,0 +1,35 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        if ! getent passwd elastic-heap-monitor >/dev/null; then
+            adduser --system --group --no-create-home \
+                    --home /nonexistent \
+                    --shell /usr/sbin/nologin \
+                    --gecos "elastic-heap-monitor daemon" \
+                    elastic-heap-monitor
+        fi
+
+        if [ -d /etc/elastic-heap-monitor ]; then
+            chown root:elastic-heap-monitor /etc/elastic-heap-monitor
+            chmod 0750 /etc/elastic-heap-monitor
+        fi
+        if [ -f /etc/elastic-heap-monitor/elastic-heap-monitor.conf ]; then
+            chown root:elastic-heap-monitor /etc/elastic-heap-monitor/elastic-heap-monitor.conf
+            chmod 0640 /etc/elastic-heap-monitor/elastic-heap-monitor.conf
+        fi
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0
