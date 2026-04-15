@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+
+%:
+	dh $@ --with systemd
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -D -m 0755 elastic-heap-monitor.pl \
+	    debian/elastic-heap-monitor/usr/bin/elastic-heap-monitor
+	install -D -m 0644 debian/elastic-heap-monitor.conf \
+	    debian/elastic-heap-monitor/etc/elastic-heap-monitor/elastic-heap-monitor.conf

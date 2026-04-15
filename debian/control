@@ -1,0 +1,24 @@
+Source: elastic-heap-monitor
+Section: admin
+Priority: optional
+Maintainer: Kyle M Hall <kyle@bywatersolutions.com>
+Build-Depends: debhelper (>= 10), dh-systemd
+Standards-Version: 4.1.1
+Homepage: https://github.com/kylemhall/elastic-heap-monitor
+
+Package: elastic-heap-monitor
+Architecture: all
+Depends: ${misc:Depends},
+         perl (>= 5.20),
+         libconfig-general-perl,
+         libjson-perl,
+         libmodern-perl-perl,
+         libio-socket-ssl-perl,
+         adduser
+Description: Elasticsearch JVM heap monitor with Slack alerts
+ A lightweight daemon that monitors Elasticsearch cluster health and
+ per-node JVM heap usage, sending alerts to a Slack incoming webhook
+ when configurable thresholds are exceeded.
+ .
+ Features include automatic cluster discovery, endpoint failover,
+ recovery notifications, and an alert cooldown to prevent alert floods.

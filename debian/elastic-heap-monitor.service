@@ -1,0 +1,22 @@
+[Unit]
+Description=Elasticsearch JVM heap monitor with Slack alerts
+Documentation=https://github.com/kylemhall/elastic-heap-monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/elastic-heap-monitor
+Restart=always
+RestartSec=10s
+
+User=elastic-heap-monitor
+Group=elastic-heap-monitor
+
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

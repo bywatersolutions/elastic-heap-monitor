@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    purge)
+        if getent passwd elastic-heap-monitor >/dev/null; then
+            deluser --system --quiet elastic-heap-monitor || true
+        fi
+        if getent group elastic-heap-monitor >/dev/null; then
+            delgroup --system --quiet elastic-heap-monitor || true
+        fi
+        rm -rf /etc/elastic-heap-monitor
+        ;;
+
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0
