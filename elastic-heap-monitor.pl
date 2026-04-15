@@ -199,8 +199,6 @@ sub check_cluster {
         delete $alert_state{"unreachable:$cluster_name"};
     }
 
-    check_cluster_health( $cluster_name, $health_data ) if $health_data;
-
     my $stats_resp = $http->get("$endpoint/_nodes/stats/jvm");
     if ( !$stats_resp->{success} ) {
         log_msg(
@@ -215,9 +213,24 @@ sub check_cluster {
         return;
     }
 
+    my @heap_info;
     for my $node_id ( keys %{ $stats->{nodes} } ) {
-        check_node_heap( $cluster_name, $stats->{nodes}{$node_id} );
+        my $node    = $stats->{nodes}{$node_id};
+        my $jvm_mem = $node->{jvm}{mem};
+        if ( $jvm_mem && defined $jvm_mem->{heap_used_percent} ) {
+            push @heap_info,
+              {
+                name => $node->{name}                 // 'unknown',
+                pct  => $jvm_mem->{heap_used_percent} // 0,
+                used => $jvm_mem->{heap_used_in_bytes} // 0,
+                max  => $jvm_mem->{heap_max_in_bytes}  // 0,
+              };
+        }
+        check_node_heap( $cluster_name, $node );
     }
+
+    check_cluster_health( $cluster_name, $health_data, \@heap_info )
+      if $health_data;
 }
 
 sub check_node_heap {
@@ -339,7 +352,7 @@ sub check_node_heap {
 }
 
 sub check_cluster_health {
-    my ( $cluster_name, $health ) = @_;
+    my ( $cluster_name, $health, $heap_info ) = @_;
 
     my $status = $health->{status} // 'unknown';
     my $key    = "health:$cluster_name";
@@ -349,6 +362,16 @@ sub check_cluster_health {
         $health->{active_shards}     // 0,
         $health->{unassigned_shards} // 0,
     );
+
+    if ( $heap_info && @$heap_info ) {
+        my @lines = map {
+            sprintf( "  %s: %d%% (%s / %s)",
+                $_->{name}, $_->{pct},
+                format_bytes( $_->{used} ),
+                format_bytes( $_->{max} ) )
+        } sort { $b->{pct} <=> $a->{pct} } @$heap_info;
+        $info .= "\nHeap usage:\n" . join( "\n", @lines );
+    }
 
     if ( $status eq 'red' ) {
         my $prev = $alert_state{$key};
