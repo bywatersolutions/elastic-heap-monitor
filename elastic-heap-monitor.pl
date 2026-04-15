@@ -86,6 +86,8 @@ my $http = HTTP::Tiny->new(
     agent   => "elastic-heap-monitor/$VERSION",
 );
 
+return 1 if $ENV{EHM_TEST_MODE};
+
 if ( !$CLUSTERS || !%$CLUSTERS ) {
     die "ERROR: No clusters configured. Use --clusters, --servers, or add escluster* entries to /etc/hosts.\n";
 }

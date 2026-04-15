@@ -2,11 +2,32 @@ name: build-deb
 
 on:
   push:
-    tags: ['v*']
+  pull_request:
 
 jobs:
+  test:
+    name: prove
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Perl dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            perl \
+            libmodern-perl-perl \
+            libconfig-tiny-perl \
+            libjson-perl \
+            libio-socket-ssl-perl
+
+      - name: Run tests
+        run: prove -v t/
+
   build:
     name: build (stretch)
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
