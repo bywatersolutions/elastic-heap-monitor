@@ -12,7 +12,7 @@ use Pod::Usage;
 use POSIX qw(setsid strftime);
 use Sys::Hostname;
 
-my $VERSION = '1.0.0';
+my $VERSION = '1.1.0';
 
 my $config_file = $ENV{EHM_MONITOR_CONFIG} // '/etc/elastic-heap-monitor/elastic-heap-monitor.conf';
 

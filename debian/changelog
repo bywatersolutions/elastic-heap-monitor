@@ -1,3 +1,9 @@
+elastic-heap-monitor (1.1.0) stable; urgency=medium
+
+  * Actual alerts now @channel the Slack channel (startup/test/recovery unchanged).
+
+ -- Kyle M Hall <kyle@bywatersolutions.com>  Fri, 17 Apr 2026 12:00:00 +0000
+
 elastic-heap-monitor (1.0.0) stable; urgency=medium
 
   * Initial Debian package.
