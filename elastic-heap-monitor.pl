@@ -107,7 +107,6 @@ if ($test_alert) {
         color   => 'warning',
         title   => ":test_tube: Test alert from elastic-heap-monitor",
         text    => "If you see this, your webhook is working.",
-        cluster => 'test',
     );
     log_msg("Test alert sent (check Slack)");
     exit 0;
@@ -139,7 +138,6 @@ if ($slack_webhook) {
         title => ":rocket: elastic-heap-monitor started on $host",
         text  => "Monitoring $cluster_count cluster(s) every ${check_interval}s:\n"
             . join( "\n", map { "  - $_" } @cluster_names ),
-        cluster => 'startup',
     );
 }
 
@@ -442,8 +440,7 @@ sub send_slack_alert {
                 color  => $args{color} // '#cccccc',
                 title  => $args{title} // 'Elasticsearch Alert',
                 text   => $args{text}  // '',
-                footer => "elastic-heap-monitor | cluster: "
-                  . ( $args{cluster} // 'unknown' ),
+                footer => "elastic-heap-monitor" . ( $args{cluster} ? " | cluster: $args{cluster}" : q{} ),
                 ts => time(),
                 ( $args{fields} ? ( fields => $args{fields} ) : () ),
             }
