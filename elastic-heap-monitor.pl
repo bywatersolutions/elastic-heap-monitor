@@ -181,7 +181,8 @@ sub check_cluster {
                 title => ":no_entry: Cluster $cluster_name UNREACHABLE",
                 text  => "All endpoints failed:\n"
                   . join( "\n", map { "  - $_" } @$endpoints ),
-                cluster => $cluster_name,
+                cluster        => $cluster_name,
+                notify_channel => 1,
             );
             record_alert( $key, 'crit' );
         }
@@ -264,8 +265,9 @@ sub check_node_heap {
                 title =>
                   ":rotating_light: CRITICAL: $node_name heap at ${heap_pct}%",
                 text => "Heap is above the ${heap_crit}% critical threshold.",
-                cluster => $cluster_name,
-                fields  => [
+                cluster        => $cluster_name,
+                notify_channel => 1,
+                fields         => [
                     {
                         title => 'Node',
                         value => $node_name,
@@ -298,8 +300,9 @@ sub check_node_heap {
                 color   => 'warning',
                 title   => ":warning: WARNING: $node_name heap at ${heap_pct}%",
                 text    => "Heap is above the ${heap_warn}% warning threshold.",
-                cluster => $cluster_name,
-                fields  => [
+                cluster        => $cluster_name,
+                notify_channel => 1,
+                fields         => [
                     {
                         title => 'Node',
                         value => $node_name,
@@ -384,7 +387,8 @@ sub check_cluster_health {
                 color   => 'danger',
                 title   => ":red_circle: Cluster $cluster_name is RED",
                 text    => $info,
-                cluster => $cluster_name,
+                cluster        => $cluster_name,
+                notify_channel => 1,
             );
             record_alert( $key, 'crit' );
         }
@@ -397,7 +401,8 @@ sub check_cluster_health {
                 title =>
                   ":large_yellow_circle: Cluster $cluster_name is YELLOW",
                 text    => $info,
-                cluster => $cluster_name,
+                cluster        => $cluster_name,
+                notify_channel => 1,
             );
             record_alert( $key, 'warn' );
         }
@@ -435,6 +440,7 @@ sub send_slack_alert {
     return unless $slack_webhook;
 
     my $payload = {
+        ( $args{notify_channel} ? ( text => '<!channel>' ) : () ),
         attachments => [
             {
                 color  => $args{color} // '#cccccc',
